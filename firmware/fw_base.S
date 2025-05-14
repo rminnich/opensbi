@@ -620,7 +620,126 @@ memcmp:
 	.align 3
 	.globl _trap_handler
 _trap_handler:
+#if 1
+	/* Swap TP and MSCRATCH */
+	csrrw	tp, CSR_MSCRATCH, tp
+
+	/* Save T0 in scratch space */
+	REG_S	t0, SBI_SCRATCH_TMP0_OFFSET(tp)
+
+	/*
+	 * Set T0 to appropriate exception stack
+	 *
+	 * Came_From_M_Mode = ((MSTATUS.MPP < PRV_M) ? 1 : 0) - 1;
+	 * Exception_Stack = TP ^ (Came_From_M_Mode & (SP ^ TP))
+	 *
+	 * Came_From_M_Mode = 0    ==>    Exception_Stack = TP
+	 * Came_From_M_Mode = -1   ==>    Exception_Stack = SP
+	 */
+	csrr	t0, CSR_MSTATUS
+	srl	t0, t0, MSTATUS_MPP_SHIFT
+	and	t0, t0, PRV_M
+	slti	t0, t0, PRV_S
+	beq t0, x0, nogsm
+
+	csrr t0, CSR_MCAUSE     # Load mcause into t0
+	addi t0, t0, -5     # Subtract 5 from t0
+	seqz t0, t0         # Set t0 = 1 if mcause == 5, otherwise 0
+	beq t0, x0, maybewrite
+
+	li t0, 0          # Load immediate value 0 into t0
+	csrw CSR_MCAUSE, t0  # Write 0 to the mtcause register
+
+	csrr t0, mepc
+	lhu t0, 0(t0)
+	andi t0, t0, 3
+	addi t0, t0, -3     # Subtract 3 from t0
+	seqz t0, t0         # Set t0 = 1 if low bits are 3
+	beq t0, x0, i16
+	
+	csrr t0, mepc
+	addi t0, t0, 4
+	csrw mepc, t0
+	j ok
+	
+i16:
+	csrr t0, mepc
+	addi t0, t0, 2
+	csrw mepc, t0
+ok:
+
+	csrr	a5, CSR_MTVAL
+	//rdinstret a5
+	//srli a5, a5, 9
+	//ld t0, 0(a5)
+	//addi t0, t0, 1
+	//sd t0, 0(a5)
+	//add a5, t0, x0
+	ld a5, 0(a5)
+
+	/* restore t0 -- we got here by exception, not call, so t0
+	 * must by restored. */
+	REG_L	t0, SBI_SCRATCH_TMP0_OFFSET(tp)
+
+	/* DO NOT USE TP after this instruction */
+	csrrw	tp, CSR_MSCRATCH, tp
+
+	mret
+
+maybewrite:
+	csrr t0, CSR_MCAUSE     # Load mcause into t0
+	addi t0, t0, -7     # Subtract 7 from t0
+	seqz t0, t0         # Set t0 = 1 if mcause == 7, otherwise 0
+	beq t0, x0, nogsm
+	li t0, 0          # Load immediate value 0 into t0
+	csrw CSR_MCAUSE, t0  # Write 0 to the mtcause register
+
+	csrr t0, mepc
+	addi t0, t0, 4
+	csrw mepc, t0
+
+	csrr	t0, CSR_MTVAL
+	//rdinstret a5
+	//srli a5, a5, 9
+	sd a4, 0(t0)
+
+	/* restore t0 -- we got here by exception, not call, so t0
+	 * must by restored. */
+	REG_L	t0, SBI_SCRATCH_TMP0_OFFSET(tp)
+
+	/* DO NOT USE TP after this instruction */
+	csrrw	tp, CSR_MSCRATCH, tp
+
+	mret
+
+nogsm:
+	csrr	t0, CSR_MSTATUS
+	srl	t0, t0, MSTATUS_MPP_SHIFT
+	and	t0, t0, PRV_M
+	slti	t0, t0, PRV_M
+	add	t0, t0, -1
+	xor	sp, sp, tp
+	and	t0, t0, sp
+	xor	sp, sp, tp
+	xor	t0, tp, t0
+
+	/* Save original SP on exception stack */
+	REG_S	sp, (SBI_TRAP_REGS_OFFSET(sp) - SBI_TRAP_REGS_SIZE)(t0)
+
+	/* Set SP to exception stack and make room for trap registers */
+	add	sp, t0, -(SBI_TRAP_REGS_SIZE)
+
+	/* Restore T0 from scratch space */
+	REG_L	t0, SBI_SCRATCH_TMP0_OFFSET(tp)
+
+	/* Save T0 on stack */
+	REG_S	t0, SBI_TRAP_REGS_OFFSET(t0)(sp)
+
+	/* Swap TP and MSCRATCH */
+	csrrw	tp, CSR_MSCRATCH, tp
+#else
 	TRAP_SAVE_AND_SETUP_SP_T0
+#endif
 
 	TRAP_SAVE_MEPC_MSTATUS 0
 
