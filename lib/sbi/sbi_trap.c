@@ -313,11 +313,13 @@ struct sbi_trap_context *sbi_trap_handler(struct sbi_trap_context *tcntx)
 		sbi_pmu_ctr_incr_fw(SBI_PMU_FW_MISALIGNED_LOAD);
 		rc  = sbi_misaligned_load_handler(tcntx);
 		msg = "misaligned load handler failed";
+		rc = -1;
 		break;
 	case CAUSE_MISALIGNED_STORE:
 		sbi_pmu_ctr_incr_fw(SBI_PMU_FW_MISALIGNED_STORE);
 		rc  = sbi_misaligned_store_handler(tcntx);
 		msg = "misaligned store handler failed";
+		rc = -1;
 		break;
 	case CAUSE_SUPERVISOR_ECALL:
 	case CAUSE_MACHINE_ECALL:
@@ -328,11 +330,13 @@ struct sbi_trap_context *sbi_trap_handler(struct sbi_trap_context *tcntx)
 		sbi_pmu_ctr_incr_fw(SBI_PMU_FW_ACCESS_LOAD);
 		rc  = sbi_load_access_handler(tcntx);
 		msg = "load fault handler failed";
+		rc = -1;
 		break;
 	case CAUSE_STORE_ACCESS:
 		sbi_pmu_ctr_incr_fw(SBI_PMU_FW_ACCESS_STORE);
 		rc  = sbi_store_access_handler(tcntx);
 		msg = "store fault handler failed";
+		rc = -1;
 		break;
 	default:
 		/* If the trap came from S or U mode, redirect it there */
