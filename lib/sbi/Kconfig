@@ -58,4 +58,8 @@ config SBI_ECALL_SSE
 	bool "SSE extension"
 	default y
 
+config SBI_VIRTIO
+	bool "virtio"
+	default y
+
 endmenu
