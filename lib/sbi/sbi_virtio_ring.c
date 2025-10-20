@@ -6,27 +6,24 @@
  * virtio ring implementation
  */
 
-#include <bouncebuf.h>
-#include <dm.h>
-#include <log.h>
-#include <malloc.h>
+#include <sbi/sbi_types.h>
+#include <sbi/sbi_list.h>
+
 #include <virtio_types.h>
 #include <virtio.h>
 #include <virtio_ring.h>
-#include <linux/bug.h>
-#include <linux/compat.h>
-#include <linux/kernel.h>
 
 static void *virtio_alloc_pages(struct udevice *vdev, u32 npages)
 {
-	return memalign(PAGE_SIZE, npages * PAGE_SIZE);
+	return sbi_malloc(npages*4096); // memalign(PAGE_SIZE, npages * PAGE_SIZE);
 }
 
 static void virtio_free_pages(struct udevice *vdev, void *ptr, u32 npages)
 {
-	free(ptr);
+	sbi_free(ptr);
 }
 
+#define PAGE_SIZE 4096
 static int __bb_force_page_align(struct bounce_buffer *state)
 {
 	const ulong align_mask = PAGE_SIZE - 1;
@@ -469,3 +466,32 @@ void virtqueue_dump(struct virtqueue *vq)
 		       vq->vring.used->ring[i].id, vq->vring.used->ring[i].len);
 	}
 }
+
+static int sbi_ecall_virtio_ring_handler(unsigned long extid, unsigned long funcid,
+				    struct sbi_trap_regs *regs,
+				    struct sbi_ecall_return *out)
+{
+	int ret = 0;
+	u32 source_hart = current_hartid();
+
+	switch (funcid) {
+	default:
+		ret = SBI_ENOTSUPP;
+	}
+
+	return ret;
+}
+
+struct sbi_ecall_extension ecall_virtio_ring;
+
+static int sbi_ecall_virtio_ring_register_extensions(void)
+{
+	return sbi_ecall_register_extension(&ecall_virtio_ring);
+}
+
+struct sbi_ecall_extension ecall_virtio_ring = {
+	.extid_start		= SBI_EXT_VIRTIO_RING,
+	.extid_end		= SBI_EXT_VIRTIO_RING,
+	.register_extensions	= sbi_ecall_virtio_ring_register_extensions,
+	.handle			= sbi_ecall_virtio_ring_handler,
+};

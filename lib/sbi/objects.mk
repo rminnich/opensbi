@@ -58,8 +58,8 @@ libsbi-objs-$(CONFIG_SBI_ECALL_DBTR) += sbi_ecall_dbtr.o
 carray-sbi_ecall_exts-$(CONFIG_SBI_ECALL_SSE) += ecall_sse
 libsbi-objs-$(CONFIG_SBI_ECALL_SSE) += sbi_ecall_sse.o
 
-carray-sbi_ecall_exts-$(CONFIG_SBI_ECALL_VIRTIO) += virtio
-libsbi-objs-$(CONFIG_SBI_ECALL_VIRTIO) += sbi_virtio.o
+carray-sbi_ecall_exts-$(CONFIG_SBI_ECALL_VIRTIO_RING) += virtio_ring
+libsbi-objs-$(CONFIG_SBI_ECALL_VIRTIO_RING) += sbi_virtio_ring.o
 
 libsbi-objs-y += sbi_bitmap.o
 libsbi-objs-y += sbi_bitops.o
