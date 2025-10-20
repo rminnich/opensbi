@@ -60,6 +60,6 @@ config SBI_ECALL_SSE
 
 config SBI_ECALL_VIRTIO_RING
 	bool "virtio ring"
-	default y
+	default n
 
 endmenu
