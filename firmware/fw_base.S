@@ -620,7 +620,7 @@ memcmp:
 	.align 3
 	.globl _trap_handler
 _trap_handler:
-#if 1
+#if 0
 	/* Swap TP and MSCRATCH */
 	csrrw	tp, CSR_MSCRATCH, tp
 
@@ -650,6 +650,7 @@ _trap_handler:
 	li t0, 0          # Load immediate value 0 into t0
 	csrw CSR_MCAUSE, t0  # Write 0 to the mtcause register
 
+	# This is the LOAD path, 32-bit insns.
 	csrr t0, mepc
 	lhu t0, 0(t0)
 	andi t0, t0, 3
@@ -667,15 +668,16 @@ i16:
 	addi t0, t0, 2
 	csrw mepc, t0
 ok:
-
-	csrr	a5, CSR_MTVAL
+	// this is the actual implementation.
 	//rdinstret a5
 	//srli a5, a5, 9
 	//ld t0, 0(a5)
 	//addi t0, t0, 1
 	//sd t0, 0(a5)
 	//add a5, t0, x0
-	ld a5, 0(a5)
+	fence r, r
+	ld a5, 0(a4)
+done:
 
 	/* restore t0 -- we got here by exception, not call, so t0
 	 * must by restored. */
@@ -698,10 +700,19 @@ maybewrite:
 	addi t0, t0, 4
 	csrw mepc, t0
 
-	csrr	t0, CSR_MTVAL
+	//csrr	t0, CSR_MTVAL
 	//rdinstret a5
 	//srli a5, a5, 9
-	sd a4, 0(t0)
+	addi t0, a5, 0
+	// this is the actual implementation.
+	sd a5, 0(a4)
+	fence rw, rw
+wloop:
+	fence r, r
+	ld a5, 0(a4)
+	bne t0, a5, wdone
+	j wloop
+wdone:
 
 	/* restore t0 -- we got here by exception, not call, so t0
 	 * must by restored. */
