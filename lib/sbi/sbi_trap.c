@@ -327,12 +327,14 @@ struct sbi_trap_context *sbi_trap_handler(struct sbi_trap_context *tcntx)
 		msg = "ecall handler failed";
 		break;
 	case CAUSE_LOAD_ACCESS:
+		sbi_printf("LOAD trap\n");
 		sbi_pmu_ctr_incr_fw(SBI_PMU_FW_ACCESS_LOAD);
 		rc  = sbi_load_access_handler(tcntx);
 		msg = "load fault handler failed";
 		rc = -1;
 		break;
 	case CAUSE_STORE_ACCESS:
+		sbi_printf("STORE trap\n");
 		sbi_pmu_ctr_incr_fw(SBI_PMU_FW_ACCESS_STORE);
 		rc  = sbi_store_access_handler(tcntx);
 		msg = "store fault handler failed";

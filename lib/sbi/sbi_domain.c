@@ -811,7 +811,7 @@ int sbi_domain_init(struct sbi_scratch *scratch, u32 cold_hartid)
 				  &root_memregs[root_memregs_count++]);
 
 	/* add the GSM region */
-	sbi_domain_memregion_init(0x2000000000>>2, 0x2000000000/1024,
+	sbi_domain_memregion_init(0x2000000000, 0x2000000000,
 				  0, // (SBI_DOMAIN_MEMREGION_M_READABLE),
 				  &root_memregs[root_memregs_count++]);
 
