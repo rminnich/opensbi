@@ -660,10 +660,10 @@ _trap_handler:
 	beq t0, x0, i16
 	
 #endif
+#if 0
 	csrr t0, mepc
 	addi t0, t0, 4
 	csrw mepc, t0
-#if 0
 	j ok
 	
 i16:
@@ -680,7 +680,17 @@ ok:
 	//sd t0, 0(a5)
 	//add a5, t0, x0
 	//fence r, r
+	li t0, 0x10000
+rloop:
 	ld a5, 0(a4)
+	bne a5, zero, doneok
+	addi t0, t0, -1
+	bne t0, zero, rloop
+	j done
+doneok:
+	csrr t0, mepc
+	addi t0, t0, 4
+	csrw mepc, t0
 done:
 
 	/* restore t0 -- we got here by exception, not call, so t0
