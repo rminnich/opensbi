@@ -649,37 +649,7 @@ _trap_handler:
 
 	li t0, 0          # Load immediate value 0 into t0
 	csrw CSR_MCAUSE, t0  # Write 0 to the mtcause register
-	// Let's not worry about 16 bits. It's wrong anyway.
-#if 0
-	# This is the LOAD path, 32-bit insns.
-	csrr t0, mepc
-	lhu t0, 0(t0)
-	andi t0, t0, 3
-	addi t0, t0, -3     # Subtract 3 from t0
-	seqz t0, t0         # Set t0 = 1 if low bits are 3
-	beq t0, x0, i16
-	
-#endif
-#if 0
-	csrr t0, mepc
-	addi t0, t0, 4
-	csrw mepc, t0
-	j ok
-	
-i16:
-	csrr t0, mepc
-	addi t0, t0, 2
-	csrw mepc, t0
-ok:
-#endif
-	// this is the actual implementation.
-	//rdinstret a5
-	//srli a5, a5, 9
-	//ld t0, 0(a5)
-	//addi t0, t0, 1
-	//sd t0, 0(a5)
-	//add a5, t0, x0
-	//fence r, r
+
 	li t0, 0x10000
 rloop:
 	ld a5, 0(a4)
@@ -688,6 +658,7 @@ rloop:
 	bne t0, zero, rloop
 	j done
 doneok:
+	// Let's not worry about 16 bits. It's wrong anyway.
 	csrr t0, mepc
 	addi t0, t0, 4
 	csrw mepc, t0
@@ -707,6 +678,7 @@ maybewrite:
 	addi t0, t0, -7     # Subtract 7 from t0
 	seqz t0, t0         # Set t0 = 1 if mcause == 7, otherwise 0
 	beq t0, x0, nogsm
+
 	li t0, 0          # Load immediate value 0 into t0
 	csrw CSR_MCAUSE, t0  # Write 0 to the mtcause register
 
@@ -714,9 +686,6 @@ maybewrite:
 	addi t0, t0, 4
 	csrw mepc, t0
 
-	//csrr	t0, CSR_MTVAL
-	//rdinstret a5
-	//srli a5, a5, 9
 	addi t0, a5, 0
 	// this is the actual implementation.
 	sd a5, 0(a4)
