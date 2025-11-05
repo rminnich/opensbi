@@ -647,22 +647,43 @@ _trap_handler:
 	seqz t0, t0         # Set t0 = 1 if mcause == 5, otherwise 0
 	beq t0, x0, maybewrite
 
-	li t0, 0          # Load immediate value 0 into t0
-	csrw CSR_MCAUSE, t0  # Write 0 to the mtcause register
+	li t0, 0x40000000
+	sd a4, 16(t0)
+	sd a5, 24(t0)
+	csrr	a4, CSR_MTVAL
+	sd a4, 8(t0)
+	//csrr a4, mtinst
+	li a4, 0x00003783
+	sd a4, 0(t0)
+	// Set up args:
+	// MEPC
+	// MTVAL
+	// a4
+	// a5
+	// a4 and a5 can be used.
+	fence rw, rw
 
-	li t0, 0x10000
+	li a4, 0          # Load immediate value 0 into t0
+	csrw CSR_MCAUSE, a4  # Write 0 to the mtcause register
+
+	// wait for it.
+	li a4, 0x10000
 rloop:
-	ld a5, 0(a4)
-	bne a5, zero, doneok
-	addi t0, t0, -1
-	bne t0, zero, rloop
+	fence r, r
+	ld a5, 0(t0)
+	beq a5, zero, doneok
+	addi a4, a4, -1
+	bne a4, zero, rloop
 	j done
 doneok:
 	// Let's not worry about 16 bits. It's wrong anyway.
-	csrr t0, mepc
-	addi t0, t0, 4
-	csrw mepc, t0
+	csrr a4, mepc
+	addi a4, a4, 4
+	csrw mepc, a4
 done:
+	// Restore a4 and a5
+	ld a4, 16(t0)
+	ld a5, 24(t0)
 
 	/* restore t0 -- we got here by exception, not call, so t0
 	 * must by restored. */
