@@ -652,9 +652,6 @@ _trap_handler:
 	sd a5, 24(t0)
 	csrr	a4, CSR_MTVAL
 	sd a4, 8(t0)
-	//csrr a4, mtinst
-	li a4, 0x00003783
-	sd a4, 0(t0)
 	// Set up args:
 	// MEPC
 	// MTVAL
@@ -665,6 +662,11 @@ _trap_handler:
 
 	li a4, 0          # Load immediate value 0 into t0
 	csrw CSR_MCAUSE, a4  # Write 0 to the mtcause register
+
+	//csrr a4, mtinst
+	li a4, 0x00003783
+	sd a4, 0(t0)
+	sd zero, 0(t0)
 
 	// wait for it.
 	li a4, 0x10000
